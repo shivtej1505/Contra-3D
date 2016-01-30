@@ -12,12 +12,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "game_config.h"
-#include "Cube.cpp"
+#include "Platform.cpp"
+#include "Circle.cpp"
 
 using namespace std;
 
-Cube cube;
-
+Platform platform;
+Circle circle;
 GLuint programID;
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
@@ -106,14 +107,10 @@ void quit(GLFWwindow *window) {
     exit(EXIT_SUCCESS);
 }
 
-/**************************
- * Customizable functions *
- **************************/
-
-float triangle_rot_dir = 1;
-float rectangle_rot_dir = 1;
-bool triangle_rot_status = true;
-bool rectangle_rot_status = true;
+void initialize_objects() {
+  platform.initialize(500, 20, 800);
+	circle.initialize(0, 0, 50);
+}
 
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
@@ -123,10 +120,8 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods) 
     if (action == GLFW_RELEASE) {
         switch (key) {
             case GLFW_KEY_C:
-                rectangle_rot_status = !rectangle_rot_status;
                 break;
             case GLFW_KEY_P:
-                triangle_rot_status = !triangle_rot_status;
                 break;
             case GLFW_KEY_X:
                 // do something ..
@@ -163,11 +158,9 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods) {
     switch (button) {
         case GLFW_MOUSE_BUTTON_LEFT:
             if (action == GLFW_RELEASE)
-                triangle_rot_dir *= -1;
             break;
         case GLFW_MOUSE_BUTTON_RIGHT:
             if (action == GLFW_RELEASE) {
-                rectangle_rot_dir *= -1;
             }
             break;
         default:
@@ -198,18 +191,14 @@ void reshapeWindow (GLFWwindow* window, int width, int height) {
     // Matrices.projection = glm::perspective (fov, (GLfloat) fbwidth / (GLfloat) fbheight, 0.1f, 500.0f);
 
     // Ortho projection for 2D views
-    Matrices.projection = glm::ortho(-4.0f, 4.0f, -4.0f, 4.0f, -10.0f, 10.0f);
+    Matrices.projection = glm::ortho(-500.0f, 500.0f, -500.0f, 500.0f, -5000.0f, 5000.0f);
 }
 
-
-
-float rectangle_rotation = 0;
-float triangle_rotation = 0;
-float tmp = 0;
+float tmp = 0.0f;
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
 void draw () {
-  float camera_rotation_angle = 90 + tmp;
+  float camera_rotation_angle = 90;
 
   // clear the color and depth in the frame buffer
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -218,33 +207,25 @@ void draw () {
   // Don't change unless you know what you are doing
   glUseProgram (programID);
 
-  // Eye - Location of camera. Don't change unless you are sure!!
-  glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 5*sin(camera_rotation_angle*M_PI/180.0f), 0 );
-  //glm::vec3 eye (5,5,5);
-  // Target - Where is the camera looking at.  Don't change unless you are sure!!
+  // Eye - Location of camera.
+  //glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0,  5*sin(camera_rotation_angle*M_PI/180.0f) );
+  glm::vec3 eye (300, 150, 300);
+	if (tmp > 350)
+		tmp = 0;
+  // Target - Where is the camera looking at.
   glm::vec3 target (0, 0, 0);
-  // Up - Up vector defines tilt of camera.  Don't change unless you are sure!!
-  glm::vec3 up (0, 0,1);
+  // Up - Up vector defines tilt of camera.
+  glm::vec3 up (0, 1, 0);
 
   // Compute Camera matrix (view)
   Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
-  //  Don't change unless you are sure!!
-  //Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
 
   // Compute ViewProject matrix as view/camera might not be changed for this frame (basic scenario)
   //  Don't change unless you are sure!!
   glm::mat4 VP = Matrices.projection * Matrices.view;
-
-  cube.drawCube(VP);
-
-
-  // Increment angles
-  float increments = 5;
+	platform.drawPlatform(VP, -100, -150, -300);
+	//circle.makeCircle(VP);
   tmp += 1;
-
-  //camera_rotation_angle++; // Simulating camera rotation
-  triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
-  rectangle_rotation = rectangle_rotation + increments*rectangle_rot_dir*rectangle_rot_status;
 }
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
@@ -298,8 +279,6 @@ GLFWwindow* initGLFW (int width, int height) {
 /* Add all the models to be created here */
 void initGL (GLFWwindow* window, int width, int height) {
     /* Objects should be created before any other gl function and shaders */
-	// Create the models
-  cube.createCube();
 
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
@@ -324,13 +303,13 @@ void initGL (GLFWwindow* window, int width, int height) {
 
 int main (int argc, char** argv)
 {
-	int width = 800;
-	int height = 800;
+	int width = 1000;
+	int height = 1000;
 
     GLFWwindow* window = initGLFW(width, height);
+	  initGL (window, width, height);
 
-	initGL (window, width, height);
-
+    initialize_objects();
     double last_update_time = glfwGetTime(), current_time;
 
     /* Draw in loop */
