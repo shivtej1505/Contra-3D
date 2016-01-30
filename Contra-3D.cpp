@@ -13,12 +13,16 @@
 
 #include "game_config.h"
 #include "Platform.cpp"
-#include "Circle.cpp"
+#include "Player.cpp"
+#include "Tile.cpp"
 
 using namespace std;
 
 Platform platform;
-Circle circle;
+Player player;
+vector<Tile> tiles;
+
+int no_of_tiles_per_row = 8;
 GLuint programID;
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
@@ -109,7 +113,23 @@ void quit(GLFWwindow *window) {
 
 void initialize_objects() {
   platform.initialize(500, 20, 800);
-	circle.initialize(0, 0, 50);
+	player.initialize(30, 50, 30);
+	for (int row = 0; row < 5; row++) {
+		for (int i = 0; i < no_of_tiles_per_row; i++) {
+			Tile tile;
+			//if (i&1)
+			tile.initialize(100, 100, 100, -100 + (row * 100) , -120, 400 - (i * 100));
+			//else
+			//tile.initialize(100, 100, 100, -100 , -80, 400 - (i * 30) );
+			tiles.push_back(tile);
+		}
+	}
+}
+
+void draw_tiles(glm::mat4 VP) {
+	for (int i = 0; i < no_of_tiles_per_row * 5; i++) {
+		tiles.at(i).drawTile(VP);
+	}
 }
 
 /* Executed when a regular key is pressed/released/held-down */
@@ -130,11 +150,23 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods) 
                 break;
         }
     }
-    else if (action == GLFW_PRESS) {
+    else if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         switch (key) {
             case GLFW_KEY_ESCAPE:
                 quit(window);
                 break;
+						case GLFW_KEY_LEFT:
+                player.move_left();
+                break;
+						case GLFW_KEY_RIGHT:
+                player.move_right();
+                break;
+						case GLFW_KEY_UP:
+                player.move_forward();
+                break;
+						case GLFW_KEY_DOWN:
+								player.move_backward();
+								break;
             default:
                 break;
         }
@@ -210,8 +242,6 @@ void draw () {
   // Eye - Location of camera.
   //glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0,  5*sin(camera_rotation_angle*M_PI/180.0f) );
   glm::vec3 eye (300, 150, 300);
-	if (tmp > 350)
-		tmp = 0;
   // Target - Where is the camera looking at.
   glm::vec3 target (0, 0, 0);
   // Up - Up vector defines tilt of camera.
@@ -223,8 +253,9 @@ void draw () {
   // Compute ViewProject matrix as view/camera might not be changed for this frame (basic scenario)
   //  Don't change unless you are sure!!
   glm::mat4 VP = Matrices.projection * Matrices.view;
-	platform.drawPlatform(VP, -100, -150, -300);
-	//circle.makeCircle(VP);
+	platform.drawPlatform(VP, -100, -100, -300);
+	player.drawPlayer(VP);
+	draw_tiles(VP);
   tmp += 1;
 }
 
