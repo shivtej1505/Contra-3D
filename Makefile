@@ -1,6 +1,6 @@
 all: contra3D
 
-game3D: Contra-3D.cpp glad.c Cube.cpp
+contra3D: Contra-3D.cpp glad.c Cube.cpp
 	g++ -o contra3D Contra-3D.cpp glad.c -lGL -lglfw -ldl
 
 clean:

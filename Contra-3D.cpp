@@ -230,7 +230,7 @@ float tmp = 0.0f;
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
 void draw () {
-  float camera_rotation_angle = 90;
+  float camera_rotation_angle = tmp;
 
   // clear the color and depth in the frame buffer
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -240,8 +240,8 @@ void draw () {
   glUseProgram (programID);
 
   // Eye - Location of camera.
-  //glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0,  5*sin(camera_rotation_angle*M_PI/180.0f) );
-  glm::vec3 eye (300, 150, 300);
+  glm::vec3 eye ( 300*cos(camera_rotation_angle*M_PI/180.0f), 15,  300*sin(camera_rotation_angle*M_PI/180.0f) );
+  //glm::vec3 eye (300, 150, 300);
   // Target - Where is the camera looking at.
   glm::vec3 target (0, 0, 0);
   // Up - Up vector defines tilt of camera.
