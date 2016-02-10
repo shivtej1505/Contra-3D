@@ -13,7 +13,8 @@ class Platform {
     platform_length = l;
     platform_height = h;
     platform_breadth = b;
-    cube.initialize(platform_length, platform_height, platform_breadth);
+    int colors[] = {8, 8, 8, 8, 9, 1};
+    cube.initialize(colors, platform_length, platform_height, platform_breadth);
   }
 
   void drawPlatform(glm::mat4 VP, GLfloat xpos, GLfloat ypos, GLfloat zpos) {

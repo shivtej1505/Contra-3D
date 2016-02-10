@@ -16,7 +16,8 @@ class Player {
     x_position = -100;
     y_position = 20;
     z_position = 470;
-    cube.initialize(l, h, b);
+    int colors[] = {8, 8, 3, 3, 2, 1};
+    cube.initialize(colors, l, h, b);
   }
 
   void drawPlayer(glm::mat4 VP) {

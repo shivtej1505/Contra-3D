@@ -13,8 +13,8 @@
 
 #include "game_config.h"
 #include "Platform.cpp"
-#include "Player.cpp"
 #include "Tile.cpp"
+#include "Player.cpp"
 
 using namespace std;
 
@@ -22,7 +22,18 @@ Platform platform;
 Player player;
 vector<Tile> tiles;
 
+int camera_view_type = TOWER_VIEW;
+float camera_rotation_angle = 90.0f;
+float camera_height = 50.0f;
+
 int no_of_tiles_per_row = 8;
+int tile_up_down[5][8] = {
+	{0, 1, 0, 0, -1, -2, 0, 0},
+{1, 1, 0, 0, -1, -2, 0, 1},
+{-1, -2, 0, 0, -1, -2, 0, -2},
+{0, 1, 0, 1, -1, 1, 0, 1},
+{-2, 1, 0, 1, -2, -2, 0, 0}
+};
 GLuint programID;
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
@@ -113,21 +124,20 @@ void quit(GLFWwindow *window) {
 
 void initialize_objects() {
   platform.initialize(500, 20, 800);
-	player.initialize(30, 50, 30);
 	for (int row = 0; row < 5; row++) {
 		for (int i = 0; i < no_of_tiles_per_row; i++) {
 			Tile tile;
-			//if (i&1)
-			tile.initialize(100, 100, 100, -100 + (row * 100) , -120, 400 - (i * 100));
-			//else
-			//tile.initialize(100, 100, 100, -100 , -80, 400 - (i * 30) );
+			tile.initialize(100, 100, 100 , -100 + (row * 100),
+				-80 + (tile_up_down[row][i] * 40 ), -300 + (i * 100) );
 			tiles.push_back(tile);
 		}
 	}
+	player.initialize(30, 50, 30);
 }
 
 void draw_tiles(glm::mat4 VP) {
-	for (int i = 0; i < no_of_tiles_per_row * 5; i++) {
+	for (int i = 0; i < no_of_tiles_per_row * 5 ; i++) {
+		//tiles.at(0).print();
 		tiles.at(i).drawTile(VP);
 	}
 }
@@ -139,12 +149,10 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods) 
 
     if (action == GLFW_RELEASE) {
         switch (key) {
-            case GLFW_KEY_C:
-                break;
-            case GLFW_KEY_P:
-                break;
-            case GLFW_KEY_X:
-                // do something ..
+            case GLFW_KEY_V:
+								camera_view_type ++;
+								if (camera_view_type > 5)
+									camera_view_type = 0;
                 break;
             default:
                 break;
@@ -152,6 +160,24 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods) 
     }
     else if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         switch (key) {
+						case GLFW_KEY_C:
+								tiles.at(0).move_up();
+								break;
+						case GLFW_KEY_P:
+								tiles.at(0).move_down();
+								break;
+						case GLFW_KEY_A: // rotate camera left
+							camera_rotation_angle -= 1.0f;
+							break;
+						case GLFW_KEY_D: // rotate camera right
+							camera_rotation_angle += 1.0f;
+	                break;
+						case GLFW_KEY_W:
+							camera_height += 5.0f;
+									break;
+						case GLFW_KEY_S:
+							camera_height -= 5.0f;
+									break;
             case GLFW_KEY_ESCAPE:
                 quit(window);
                 break;
@@ -223,15 +249,12 @@ void reshapeWindow (GLFWwindow* window, int width, int height) {
     // Matrices.projection = glm::perspective (fov, (GLfloat) fbwidth / (GLfloat) fbheight, 0.1f, 500.0f);
 
     // Ortho projection for 2D views
-    Matrices.projection = glm::ortho(-500.0f, 500.0f, -500.0f, 500.0f, -5000.0f, 5000.0f);
+    Matrices.projection = glm::ortho(-500.0f, 500.0f, -500.0f, 500.0f, -2000.0f, 2000.0f);
 }
 
-float tmp = 0.0f;
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
 void draw () {
-  float camera_rotation_angle = tmp;
-
   // clear the color and depth in the frame buffer
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -240,23 +263,30 @@ void draw () {
   glUseProgram (programID);
 
   // Eye - Location of camera.
-  glm::vec3 eye ( 300*cos(camera_rotation_angle*M_PI/180.0f), 15,  300*sin(camera_rotation_angle*M_PI/180.0f) );
-  //glm::vec3 eye (300, 150, 300);
-  // Target - Where is the camera looking at.
-  glm::vec3 target (0, 0, 0);
-  // Up - Up vector defines tilt of camera.
-  glm::vec3 up (0, 1, 0);
-
-  // Compute Camera matrix (view)
-  Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
+	// Target - Where cameara is looking
+	// up - Tilt of camera
+	if (camera_view_type == TOWER_VIEW) {
+		glm::vec3 eye (300, 150, 300); // Tower view
+		glm::vec3 up (0, 1, 0); // Tower View
+		glm::vec3 target (0, 0, 0);
+		Matrices.view = glm::lookAt( eye, target, up );
+	} else if (camera_view_type == TOP_VIEW) {
+		glm::vec3 eye (0, 150, 0); // Top view
+		glm::vec3 up (0, 0, -1); // Top View
+		glm::vec3 target (0, 0, 0);
+		Matrices.view = glm::lookAt( eye, target, up );
+	} else if (camera_view_type == CUSTOM_VIEW) {
+		glm::vec3 eye ( 300*cos(camera_rotation_angle*M_PI/180.0f), camera_height,  300*sin(camera_rotation_angle*M_PI/180.0f));
+		glm::vec3 up (0, 1, 0); // Top View
+		glm::vec3 target (0, 0, 0);
+		Matrices.view = glm::lookAt( eye, target, up );
+	}
 
   // Compute ViewProject matrix as view/camera might not be changed for this frame (basic scenario)
-  //  Don't change unless you are sure!!
   glm::mat4 VP = Matrices.projection * Matrices.view;
 	platform.drawPlatform(VP, -100, -100, -300);
-	player.drawPlayer(VP);
 	draw_tiles(VP);
-  tmp += 1;
+	player.drawPlayer(VP);
 }
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */

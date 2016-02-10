@@ -9,4 +9,8 @@ static const float MIN_X = - WIDTH ;
 static const float MAX_Y= HEIGHT ;
 static const float MIN_Y= - HEIGHT ;
 
+static const int TOWER_VIEW = 0;
+static const int TOP_VIEW = 1;
+static const int CUSTOM_VIEW = 5;
+
 #endif
